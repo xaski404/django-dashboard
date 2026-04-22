@@ -1,0 +1,56 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Notatki — Dashboard{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><span>Notatki</span></h1>
+            <p class="page-subtitle">Twoje notatki w jednym miejscu</p>
+        </div>
+        <a href="{% url 'note_create' %}" class="btn btn-primary" id="btn-create-note">
+            ➕ Nowa notatka
+        </a>
+    </div>
+
+    {% if notes %}
+    <div class="notes-grid">
+        {% for note in notes %}
+        <div class="note-card" style="animation-delay: {{ forloop.counter0 }}00ms">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: {{ note.color }};"></div>
+            {% if note.pinned %}
+            <div class="note-card-pin">📌</div>
+            {% endif %}
+            <div class="note-card-title">{{ note.title }}</div>
+            <div class="note-card-content">{{ note.content }}</div>
+            <div class="note-card-footer">
+                <span class="note-card-date">{{ note.created_at|date:"d.m.Y H:i" }}</span>
+                <div class="note-card-actions">
+                    <form action="{% url 'note_toggle_pin' note.pk %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="task-action-btn" title="{% if note.pinned %}Odepnij{% else %}Przypnij{% endif %}">
+                            {% if note.pinned %}📌{% else %}📍{% endif %}
+                        </button>
+                    </form>
+                    <a href="{% url 'note_edit' note.pk %}" class="task-action-btn" title="Edytuj">✏️</a>
+                    <form action="{% url 'note_delete' note.pk %}" method="post" class="delete-form">
+                        {% csrf_token %}
+                        <button type="submit" class="task-action-btn delete" title="Usuń">🗑️</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <p class="empty-state-text">Nie masz jeszcze żadnych notatek</p>
+            <a href="{% url 'note_create' %}" class="btn btn-primary btn-sm">Dodaj notatkę</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

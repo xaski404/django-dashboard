@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal Dashboard — zarządzaj zadaniami i notatkami">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">🚀</div>
+                <div class="sidebar-logo-text">Dashboard</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">Menu</div>
+                <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+                    <span class="nav-link-icon">📊</span>
+                    <span>Przegląd</span>
+                </a>
+                <a href="{% url 'task_list' %}" class="nav-link {% if 'task' in request.resolver_match.url_name %}active{% endif %}" id="nav-tasks">
+                    <span class="nav-link-icon">✅</span>
+                    <span>Zadania</span>
+                    {% if todo_count %}<span class="nav-link-badge">{{ todo_count }}</span>{% endif %}
+                </a>
+                <a href="{% url 'note_list' %}" class="nav-link {% if 'note' in request.resolver_match.url_name %}active{% endif %}" id="nav-notes">
+                    <span class="nav-link-icon">📝</span>
+                    <span>Notatki</span>
+                </a>
+
+                <div class="nav-section-label">System</div>
+                <a href="{% url 'admin:index' %}" class="nav-link" id="nav-admin">
+                    <span class="nav-link-icon">⚙️</span>
+                    <span>Admin</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-link" id="nav-logout">
+                    <span class="nav-link-icon">🚪</span>
+                    <span>Wyloguj</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar">
+                        {{ request.user.username|first|upper }}
+                    </div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name">{{ request.user.username }}</div>
+                        <div class="sidebar-user-role">Użytkownik</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% if messages %}
+            <ul class="messages" id="messages">
+                {% for message in messages %}
+                <li class="message {{ message.tags }}">
+                    {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% else %}ℹ️{% endif %}
+                    {{ message }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        // Auto-hide messages after 4 seconds
+        setTimeout(() => {
+            const msgs = document.getElementById('messages');
+            if (msgs) {
+                msgs.style.transition = 'opacity 0.5s ease';
+                msgs.style.opacity = '0';
+                setTimeout(() => msgs.remove(), 500);
+            }
+        }, 4000);
+
+        // Confirm delete
+        document.querySelectorAll('.delete-form').forEach(form => {
+            form.addEventListener('submit', (e) => {
+                if (!confirm('Czy na pewno chcesz usunąć?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

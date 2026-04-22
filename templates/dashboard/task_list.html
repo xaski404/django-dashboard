@@ -1,0 +1,75 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Zadania — Dashboard{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><span>Zadania</span></h1>
+            <p class="page-subtitle">Zarządzaj swoimi zadaniami</p>
+        </div>
+        <a href="{% url 'task_create' %}" class="btn btn-primary" id="btn-create-task">
+            ➕ Nowe zadanie
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="filter-bar" id="task-filters">
+        <select name="status" class="form-input form-select" onchange="this.form.submit()" id="filter-status">
+            <option value="">Wszystkie statusy</option>
+            <option value="todo" {% if status_filter == 'todo' %}selected{% endif %}>Do zrobienia</option>
+            <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>W trakcie</option>
+            <option value="done" {% if status_filter == 'done' %}selected{% endif %}>Zrobione</option>
+        </select>
+        <select name="priority" class="form-input form-select" onchange="this.form.submit()" id="filter-priority">
+            <option value="">Wszystkie priorytety</option>
+            <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Wysoki</option>
+            <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Średni</option>
+            <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Niski</option>
+        </select>
+        {% if status_filter or priority_filter %}
+        <a href="{% url 'task_list' %}" class="btn btn-ghost btn-sm" id="btn-clear-filters">✕ Wyczyść filtry</a>
+        {% endif %}
+    </form>
+
+    <!-- Task List -->
+    <div class="card">
+        {% if tasks %}
+            {% for task in tasks %}
+            <div class="task-item {% if task.status == 'done' %}done{% endif %}" style="animation-delay: {{ forloop.counter0 }}00ms">
+                <div class="task-checkbox">
+                    <form action="{% url 'task_toggle' task.pk %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" title="Zmień status">{% if task.status == 'done' %}✓{% endif %}</button>
+                    </form>
+                </div>
+                <div class="task-info">
+                    <div class="task-title">{{ task.title }}</div>
+                    <div class="task-meta">
+                        <span class="priority-badge {{ task.priority }}">{{ task.get_priority_display }}</span>
+                        <span class="status-badge {{ task.status }}">{{ task.get_status_display }}</span>
+                        {% if task.due_date %}
+                        <span class="task-due">📅 {{ task.due_date|date:"d.m.Y" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <a href="{% url 'task_edit' task.pk %}" class="task-action-btn" title="Edytuj">✏️</a>
+                    <form action="{% url 'task_delete' task.pk %}" method="post" class="delete-form">
+                        {% csrf_token %}
+                        <button type="submit" class="task-action-btn delete" title="Usuń">🗑️</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🎯</div>
+                <p class="empty-state-text">Brak zadań do wyświetlenia</p>
+                <a href="{% url 'task_create' %}" class="btn btn-primary btn-sm">Dodaj pierwsze zadanie</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

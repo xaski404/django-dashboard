@@ -1,0 +1,160 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard — Przegląd{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Witaj, <span>{{ request.user.username }}</span> 👋</h1>
+            <p class="page-subtitle">Oto podsumowanie Twojego dnia</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{% url 'task_create' %}" class="btn btn-primary" id="btn-new-task">
+                ➕ Nowe zadanie
+            </a>
+            <a href="{% url 'note_create' %}" class="btn btn-secondary" id="btn-new-note">
+                📝 Nowa notatka
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card purple" id="stat-total-tasks">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">📋</div>
+            </div>
+            <div class="stat-card-value">{{ total_tasks }}</div>
+            <div class="stat-card-label">Wszystkie zadania</div>
+        </div>
+        <div class="stat-card green" id="stat-done-tasks">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">✅</div>
+            </div>
+            <div class="stat-card-value">{{ done_tasks }}</div>
+            <div class="stat-card-label">Ukończone</div>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" style="width: {{ completion_rate }}%"></div>
+            </div>
+        </div>
+        <div class="stat-card blue" id="stat-in-progress">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">⏳</div>
+            </div>
+            <div class="stat-card-value">{{ in_progress_tasks }}</div>
+            <div class="stat-card-label">W trakcie</div>
+        </div>
+        <div class="stat-card orange" id="stat-notes">
+            <div class="stat-card-header">
+                <div class="stat-card-icon">📝</div>
+            </div>
+            <div class="stat-card-value">{{ total_notes }}</div>
+            <div class="stat-card-label">Notatki</div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+        <!-- Recent Tasks -->
+        <div class="card" id="recent-tasks-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <span class="card-title-icon">📋</span>
+                    Ostatnie zadania
+                </h2>
+                <a href="{% url 'task_list' %}" class="card-action">Zobacz wszystkie →</a>
+            </div>
+            {% if recent_tasks %}
+                {% for task in recent_tasks %}
+                <div class="task-item {% if task.status == 'done' %}done{% endif %}">
+                    <div class="task-checkbox">
+                        <form action="{% url 'task_toggle' task.pk %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" title="Zmień status">{% if task.status == 'done' %}✓{% endif %}</button>
+                        </form>
+                    </div>
+                    <div class="task-info">
+                        <div class="task-title">{{ task.title }}</div>
+                        <div class="task-meta">
+                            <span class="priority-badge {{ task.priority }}">{{ task.get_priority_display }}</span>
+                            {% if task.due_date %}
+                            <span class="task-due">📅 {{ task.due_date|date:"d.m.Y" }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <a href="{% url 'task_edit' task.pk %}" class="task-action-btn" title="Edytuj">✏️</a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p class="empty-state-text">Nie masz jeszcze żadnych zadań</p>
+                    <a href="{% url 'task_create' %}" class="btn btn-primary btn-sm">Dodaj zadanie</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Pinned Notes -->
+        <div class="card" id="pinned-notes-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <span class="card-title-icon">📌</span>
+                    Przypięte notatki
+                </h2>
+                <a href="{% url 'note_list' %}" class="card-action">Zobacz wszystkie →</a>
+            </div>
+            {% if pinned_notes %}
+                {% for note in pinned_notes %}
+                <div class="task-item">
+                    <div class="task-info">
+                        <div class="task-title" style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ note.color }}; flex-shrink: 0;"></span>
+                            {{ note.title }}
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-due">{{ note.content|truncatewords:12 }}</span>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <a href="{% url 'note_edit' note.pk %}" class="task-action-btn" title="Edytuj">✏️</a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">📌</div>
+                    <p class="empty-state-text">Brak przypiętych notatek</p>
+                    <a href="{% url 'note_create' %}" class="btn btn-primary btn-sm">Dodaj notatkę</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upcoming Deadlines -->
+    {% if upcoming %}
+    <div class="card" id="upcoming-deadlines-card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <span class="card-title-icon">⏰</span>
+                Nadchodzące terminy
+            </h2>
+        </div>
+        {% for task in upcoming %}
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-title">{{ task.title }}</div>
+                <div class="task-meta">
+                    <span class="priority-badge {{ task.priority }}">{{ task.get_priority_display }}</span>
+                    <span class="status-badge {{ task.status }}">{{ task.get_status_display }}</span>
+                    <span class="task-due">📅 {{ task.due_date|date:"d.m.Y" }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
